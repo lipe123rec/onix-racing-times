@@ -1,0 +1,14 @@
+{
+  "name": "onix-racing-times",
+  "version": "1.0.0",
+  "description": "ONIX Racing Times Board",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5500",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.2.0"
+  }
+}

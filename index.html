@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ONIX Racing Times</title>
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:  #b3d335;
+      --cyan:   #00d4e8;
+      --dark:   #0d0f0a;
+      --panel:  rgba(10, 12, 8, 0.82);
+      --panel2: rgba(14, 17, 9, 0.94);
+      --border: rgba(179, 211, 53, 0.15);
+      --border2:rgba(179, 211, 53, 0.32);
+      --text:   #f0f2e8;
+      --muted:  #7a8060;
+      --red:    #e8353a;
+      --cond:   'Barlow Condensed', sans-serif;
+      --body:   'Barlow', sans-serif;
+    }
+
+    html { min-height: 100vh; }
+
+    body {
+      min-height: 100vh;
+      font-family: var(--body);
+      color: var(--text);
+      background: var(--dark);
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        linear-gradient(160deg, rgba(10,12,8,0.50) 0%, rgba(10,12,8,0.75) 100%),
+        url('https://images8.alphacoders.com/140/thumb-1920-1405619.jpg') center/cover no-repeat;
+      z-index: -1;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--panel2);
+      backdrop-filter: blur(14px);
+      border-bottom: 2px solid var(--green);
+      padding: 0 40px;
+    }
+
+    .header-inner {
+      max-width: 1500px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 20px 0;
+    }
+
+    .logo { display: flex; align-items: center; gap: 14px; }
+
+    .logo-tag {
+      background: var(--green);
+      color: #0d0f0a;
+      font-family: var(--cond);
+      font-weight: 900;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      padding: 4px 10px 3px;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    h1 {
+      font-family: var(--cond);
+      font-weight: 900;
+      font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+      letter-spacing: 0.01em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    h1 em { font-style: normal; color: var(--green); }
+
+    .badge {
+      font-family: var(--cond);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 5px 14px 4px;
+      border: 1px solid var(--muted);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .badge.live { border-color: var(--green); color: var(--green); }
+    .badge.live::before { content: '● '; animation: blink 1.1s step-end infinite; }
+    .badge.err  { border-color: var(--red);   color: var(--red); }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* MAIN */
+    main {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 28px 40px 52px;
+    }
+
+    #status {
+      font-family: var(--cond);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 14px;
+      min-height: 18px;
+    }
+
+    #status.success { color: var(--green); }
+    #status.error   { color: var(--red); }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 56px 0;
+      font-family: var(--cond);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(179,211,53,0.18);
+      border-top-color: var(--green);
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* FILTERS */
+    .filters-bar {
+      background: var(--panel2);
+      border: 1px solid var(--border2);
+      border-top: 2px solid rgba(179,211,53,0.4);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      display: none; /* shown after data loads */
+    }
+
+    .filters-bar.visible { display: block; }
+
+    .filters-label {
+      font-family: var(--cond);
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .filters-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1 1 140px;
+      min-width: 120px;
+    }
+
+    .filter-group label {
+      font-family: var(--cond);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--green);
+    }
+
+    .filter-group select {
+      background: rgba(10, 12, 8, 0.9);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--cond);
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 6px 28px 6px 10px;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23b3d335' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    .filter-group select:focus,
+    .filter-group select:hover { border-color: var(--green); }
+
+    .filters-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn-clear {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      font-family: var(--cond);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 5px 16px 4px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-clear:hover { border-color: var(--red); color: var(--red); }
+
+    .filter-count {
+      font-family: var(--cond);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .filter-count span { color: var(--cyan); }
+
+    /* TABLE WRAP */
+    .table-wrap {
+      background: var(--panel);
+      backdrop-filter: blur(18px);
+      border: 1px solid var(--border2);
+      border-top: 3px solid var(--green);
+    }
+
+    @media (min-width: 769px) {
+      .table-wrap { overflow-x: visible; }
+      table { width: 100%; table-layout: fixed; }
+
+      col.c-created_at { width: 8%; }
+      col.c-car        { width: 18%; }
+      col.c-class      { width: 5%; }
+      col.c-track      { width: 12%; }
+      col.c-track_type { width: 12%; }
+      col.c-race_type  { width: 9%; }
+      col.c-gamertag   { width: 11%; }
+      col.c-time       { width: 9%; }
+      col.c-link       { width: 6%; }
+    }
+
+    @media (max-width: 768px) {
+      main { padding: 18px 14px 40px; }
+      header { padding: 0 14px; }
+      .header-inner { padding: 14px 0; }
+      .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { width: max-content; min-width: 860px; table-layout: auto; }
+      .filters-grid { gap: 8px; }
+      .filter-group { flex: 1 1 130px; }
+    }
+
+    table { border-collapse: collapse; font-size: 0.87rem; }
+
+    thead {
+      background: rgba(179, 211, 53, 0.06);
+      border-bottom: 1px solid var(--border2);
+    }
+
+    th {
+      font-family: var(--cond);
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      color: var(--green);
+      padding: 11px 16px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th.c-id { color: var(--muted); }
+    th.sortable:hover {
+      background: rgba(179, 211, 53, 0.1);
+      color: #fff;
+    }
+
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(179,211,53,0.04); }
+
+    tr.row-deleted td {
+      opacity: 0.55;
+      text-decoration: line-through;
+      background: rgba(232, 53, 58, 0.03);
+    }
+    tr.row-deleted td.c-actions,
+    tr.row-deleted td.c-link {
+      text-decoration: none;
+    }
+
+    td.c-id        { color: var(--muted); font-size: 0.72rem; }
+    td.c-gamertag  { font-weight: 600; color: #fff; }
+    td.c-class     { font-family: var(--cond); font-weight: 800; font-size: 0.92rem; color: var(--green); }
+    td.c-time      { font-family: var(--cond); font-weight: 700; font-size: 1rem; color: var(--cyan); letter-spacing: 0.03em; }
+    td.c-race_type { font-family: var(--cond); font-weight: 700; font-size: 0.85rem; color: #e8c535; }
+
+    /* podium stripes — removed */
+
+    .btn-link {
+      display: inline-block;
+      border: 1px solid var(--cyan);
+      color: var(--cyan);
+      background: transparent;
+      font-family: var(--cond);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 12px 3px;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-link:hover { background: var(--cyan); color: #0d0f0a; }
+
+    .empty {
+      padding: 72px 24px;
+      text-align: center;
+      font-family: var(--cond);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .empty .icon { font-size: 2.4rem; margin-bottom: 14px; }
+
+    .meta {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--cond);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .btn-refresh {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      font-family: var(--cond);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 6px 18px 5px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-refresh:hover { border-color: var(--green); color: var(--green); }
+
+    footer {
+      text-align: center;
+      padding: 18px;
+      font-family: var(--cond);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(120,130,90,0.4);
+    }
+
+    /* FORM & INPUT STYLES */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-align: left;
+    }
+
+    .field-label {
+      font-family: var(--cond);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--green);
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .field-input {
+      width: 100%;
+      background: rgba(10, 12, 8, 0.9);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+
+    .field-input::placeholder {
+      color: var(--muted);
+      opacity: 1;
+    }
+
+    .field-input:hover {
+      border-color: rgba(179, 211, 53, 0.5);
+    }
+
+    .field-input:focus {
+      border-color: var(--green);
+    }
+
+    .field-input:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .field-error {
+      color: var(--red);
+      font-family: var(--cond);
+      font-size: 0.72rem;
+      font-weight: 600;
+      margin-top: 4px;
+      min-height: 14px;
+    }
+
+    .status-text {
+      font-family: var(--cond);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      min-height: 18px;
+    }
+
+    .status-text.success { color: var(--green); }
+    .status-text.error   { color: var(--red); }
+
+    .btn {
+      background: var(--green);
+      color: #0d0f0a;
+      border: none;
+      font-family: var(--cond);
+      font-weight: 800;
+      font-size: 0.82rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 10px 28px 9px;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+
+    .btn:hover  { filter: brightness(1.1); }
+    .btn:active { filter: brightness(0.9); }
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      filter: none;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--green);
+      font-family: var(--cond);
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 8px 22px 7px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.15s;
+    }
+
+    .btn-outline:hover {
+      border-color: var(--green);
+      background: rgba(179, 211, 53, 0.08);
+    }
+
+    col.c-actions { width: 16%; }
+    td.c-actions, td.c-link {
+      overflow: visible !important;
+      text-overflow: clip !important;
+    }
+
+    /* MODAL STYLES */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 7, 4, 0.85);
+      backdrop-filter: blur(16px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--panel2);
+      border: 2px solid var(--border2);
+      border-radius: 4px;
+      width: 100%;
+      max-width: 440px;
+      padding: 32px;
+      position: relative;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+      transform: translateY(-20px);
+      transition: transform 0.3s ease;
+    }
+
+    .modal-overlay.open .modal {
+      transform: translateY(0);
+    }
+
+    .modal-title {
+      font-family: var(--cond);
+      font-weight: 900;
+      font-size: 1.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      border-bottom: 2px solid var(--green);
+      padding-bottom: 12px;
+      color: var(--text);
+    }
+
+    @keyframes authFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-tag">Forza</div>
+      <h1>ONIX <em>Racing</em> Times</h1>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <div id="userSection"></div>
+      <div id="liveBadge" class="badge">Conectando...</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="status">Buscando dados...</div>
+
+  <!-- Form Section (shown only to logged in users) -->
+  <div id="recordFormSection" style="display: none; background: var(--panel); backdrop-filter: blur(18px); border: 1px solid var(--border2); border-top: 3px solid var(--cyan); padding: 24px; margin-bottom: 24px; animation: authFadeUp 0.35s ease;">
+    <h2 id="formTitle" style="margin-bottom: 16px; font-size: 1.3rem;">🏁 Registrar Novo Tempo</h2>
+    <form id="recordForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+      <input type="hidden" id="editRowId">
+      
+      <div class="field-group" id="formGamertagGroup" style="display: none;">
+        <label for="formGamertag" class="field-label">Gamertag do Piloto</label>
+        <input type="text" id="formGamertag" class="field-input" placeholder="Ex: ONX FLASH BR">
+      </div>
+
+      <div class="field-group">
+        <label for="formCar" class="field-label">Carro</label>
+        <input type="text" id="formCar" class="field-input" placeholder="Ex: 1991 Honda Beat" required>
+      </div>
+      
+      <div class="field-group">
+        <label for="formClass" class="field-label">Classe</label>
+        <input type="text" id="formClass" class="field-input" placeholder="Ex: B600" required>
+      </div>
+
+      <div class="field-group">
+        <label for="formTrack" class="field-label">Pista</label>
+        <input type="text" id="formTrack" class="field-input" placeholder="Ex: Corrida do Cedro" required>
+      </div>
+
+      <div class="field-group">
+        <label for="formTrackType" class="field-label">Tipo de Pista</label>
+        <input type="text" id="formTrackType" class="field-input" placeholder="Ex: Corrida de Rua" required>
+      </div>
+
+      <div class="field-group">
+        <label for="formRaceType" class="field-label">Tipo de Corrida</label>
+        <input type="text" id="formRaceType" class="field-input" placeholder="Ex: Rivais" required>
+      </div>
+
+      <div class="field-group">
+        <label for="formTime" class="field-label">Tempo</label>
+        <input type="text" id="formTime" class="field-input" placeholder="Ex: 2:06.393" required>
+      </div>
+
+      <div class="field-group" style="grid-column: span 2;">
+        <label for="formLink" class="field-label">Link do Vídeo</label>
+        <input type="url" id="formLink" class="field-input" placeholder="Ex: https://youtu.be/..." required>
+      </div>
+
+      <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+        <button type="button" id="btnCancelEdit" class="btn-outline" style="display: none; padding: 8px 18px;" onclick="cancelEdit()">Cancelar Edição</button>
+        <button type="submit" id="btnSubmitForm" class="btn" style="padding: 8px 28px;">Salvar Registro</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Filters (hidden until data loads) -->
+  <div class="filters-bar" id="filtersBar">
+    <div class="filters-label">Filtros</div>
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label for="f-class">Classe</label>
+        <select id="f-class" onchange="applyFilters()"><option value="">Todas</option></select>
+      </div>
+      <div class="filter-group">
+        <label for="f-track">Pista</label>
+        <select id="f-track" onchange="applyFilters()"><option value="">Todas</option></select>
+      </div>
+      <div class="filter-group">
+        <label for="f-track_type">Tipo de Pista</label>
+        <select id="f-track_type" onchange="applyFilters()"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label for="f-race_type">Tipo de Corrida</label>
+        <select id="f-race_type" onchange="applyFilters()"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label for="f-gamertag">Gamertag</label>
+        <select id="f-gamertag" onchange="applyFilters()"><option value="">Todos</option></select>
+      </div>
+      <div class="filter-group">
+        <label for="f-status">Status</label>
+        <select id="f-status" onchange="applyFilters()">
+          <option value="active" selected>Ativos</option>
+          <option value="deleted">Arquivados (Excluídos)</option>
+          <option value="all">Todos</option>
+        </select>
+      </div>
+    </div>
+    <div class="filters-actions">
+      <button class="btn-clear" onclick="clearFilters()">✕ Limpar filtros</button>
+      <span class="filter-count" id="filterCount"></span>
+    </div>
+  </div>
+
+  <div id="content">
+    <div class="loading"><div class="spinner"></div>Carregando tempos...</div>
+  </div>
+  <div class="meta" id="meta" style="display:none">
+    <span id="rowCount"></span>
+    <button class="btn-refresh" onclick="fetchData()">↻ Atualizar</button>
+  </div>
+</main>
+
+<footer>ONIX Racing BR . track-times</footer>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal">
+      <h3 class="modal-title">Entrar</h3>
+      <div id="loginStatus" class="status-text" style="margin-bottom: 16px;"></div>
+      <form id="loginForm" novalidate>
+        <div class="field-group" style="margin-bottom: 16px;">
+          <label for="loginEmail" class="field-label">E-mail</label>
+          <input type="email" id="loginEmail" class="field-input" placeholder="exemplo@email.com" required>
+          <div id="loginEmailErr" class="field-error"></div>
+        </div>
+
+        <div class="field-group" style="margin-bottom: 24px;">
+          <label for="loginPassword" class="field-label">Senha</label>
+          <input type="password" id="loginPassword" class="field-input" placeholder="Sua senha" required>
+          <div id="loginPasswordErr" class="field-error"></div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn-clear" onclick="closeLoginModal()" style="min-height: auto; padding: 8px 16px;">Cancelar</button>
+          <button type="submit" class="btn" style="padding: 8px 24px;">Entrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { supabase } from './js/supabase.js';
+    import { getCurrentUser, getUserProfile, login, logout } from './js/auth.js';
+
+    const TABLE = 'track-times'
+    const COLS   = ['created_at','car','class','track','track_type','race_type','gamertag','time','link']
+    const LABELS = { created_at:'Data', car:'Carro', class:'Classe', track:'Pista', track_type:'Tipo de Pista', race_type:'Tipo de Corrida', gamertag:'Gamertag', time:'Tempo', link:'Vídeo', actions:'Ações' }
+
+    // Filter keys → select element IDs
+    const FILTER_COLS = ['class','track','track_type','race_type','gamertag']
+
+    let allData = []
+    let currentUser = null
+    let currentProfile = null
+    let sortCol = null
+    let sortAsc = true
+
+    function formatDate(val) {
+      if (!val) return '<span style="color:var(--muted)">—</span>'
+      const d = new Date(val)
+      if (isNaN(d)) return val
+      return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`
+    }
+
+    function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+    function renderCell(col, val, row) {
+      if (val === null || val === undefined || val === '') {
+        if (col !== 'actions') return '<span style="color:var(--muted)">—</span>'
+      }
+      if (col === 'created_at') return formatDate(val)
+      if (col === 'link') return `<a class="btn-link" href="${esc(val)}" target="_blank" rel="noopener noreferrer">Ver ↗</a>`
+      
+      if (col === 'actions') {
+        const linkBtn = row.link ? `<a class="btn-link" href="${esc(row.link)}" target="_blank" rel="noopener noreferrer">Ver ↗</a>` : ''
+        const hasPermission = currentUser && (row.user_id === currentUser.id || currentProfile?.is_admin)
+        if (hasPermission) {
+          if (row.is_deleted) {
+            return `
+              <div style="display: flex; gap: 6px; align-items: center;">
+                ${linkBtn}
+                <button class="btn-link" onclick="restoreRow(${row.id})" style="border-color: var(--green); color: var(--green); cursor: pointer;">Restaurar</button>
+                <button class="btn-link" onclick="deleteRow(${row.id})" style="border-color: var(--red); color: var(--red); cursor: pointer;">Excluir</button>
+              </div>
+            `
+          }
+          return `
+            <div style="display: flex; gap: 6px; align-items: center;">
+              ${linkBtn}
+              <button class="btn-link" onclick="editRow(${row.id})" style="border-color: var(--green); color: var(--green); cursor: pointer;">Editar</button>
+              <button class="btn-link" onclick="deleteRow(${row.id})" style="border-color: var(--red); color: var(--red); cursor: pointer;">Excluir</button>
+            </div>
+          `
+        }
+        return linkBtn || '<span style="color:var(--muted)">—</span>'
+      }
+      return esc(val)
+    }
+
+    function buildTable(data) {
+      const content = document.getElementById('content')
+      if (!data || data.length === 0) {
+        content.innerHTML = `<div class="table-wrap"><div class="empty"><div class="icon">🏁</div>Nenhum resultado encontrado.</div></div>`
+        return
+      }
+
+      // Include actions column if user is logged in, replacing the 'link' column
+      const activeCols = currentUser ? [...COLS.filter(c => c !== 'link'), 'actions'] : [...COLS];
+
+      const colgroup = activeCols.map(c => `<col class="c-${c}">`).join('')
+      const thead    = `<thead><tr>${activeCols.map(c => {
+        const isSortable = c !== 'actions' && c !== 'link';
+        const label = LABELS[c] || c;
+        if (isSortable) {
+          const arrow = sortCol === c ? (sortAsc ? ' ▲' : ' ▼') : '';
+          return `<th class="c-${c} sortable" onclick="sortBy('${c}')" style="cursor: pointer; user-select: none;">${label}${arrow}</th>`;
+        }
+        return `<th class="c-${c}">${label}</th>`;
+      }).join('')}</tr></thead>`
+      const rows     = data.map((row, i) => {
+        const rankClass = i === 0 ? ' rank-1' : i === 1 ? ' rank-2' : i === 2 ? ' rank-3' : ''
+        const deletedClass = row.is_deleted ? ' row-deleted' : ''
+        return `<tr class="${rankClass}${deletedClass}">${activeCols.map(c => `<td class="c-${c}">${renderCell(c, row[c], row)}</td>`).join('')}</tr>`
+      }).join('')
+      content.innerHTML = `<div class="table-wrap"><table><colgroup>${colgroup}</colgroup>${thead}<tbody>${rows}</tbody></table></div>`
+    }
+
+    function populateFilters(data) {
+      FILTER_COLS.forEach(col => {
+        const sel = document.getElementById(`f-${col}`)
+        const current = sel.value
+        // Collect distinct non-empty values
+        const vals = [...new Set(data.map(r => r[col]).filter(v => v !== null && v !== undefined && v !== ''))].sort()
+        // Rebuild options preserving selection
+        const placeholder = sel.options[0].text // "Todas" / "Todos"
+        sel.innerHTML = `<option value="">${placeholder}</option>`
+        vals.forEach(v => {
+          const opt = document.createElement('option')
+          opt.value = v
+          opt.textContent = v
+          if (v === current) opt.selected = true
+          sel.appendChild(opt)
+        })
+      })
+    }
+
+    function getFilters() {
+      const f = {}
+      FILTER_COLS.forEach(col => {
+        const val = document.getElementById(`f-${col}`).value
+        if (val) f[col] = val
+      })
+      return f
+    }
+
+    function applyFilters() {
+      const filters = getFilters()
+      const showStatus = document.getElementById('f-status').value // 'active', 'deleted', 'all'
+      
+      let filtered = allData.filter(row => {
+        // First check dynamic filters
+        const matchesDynamic = Object.entries(filters).every(([col, val]) => String(row[col]) === String(val))
+        if (!matchesDynamic) return false
+        
+        // Then check is_deleted status filter
+        if (showStatus === 'active') {
+          return !row.is_deleted
+        } else if (showStatus === 'deleted') {
+          return row.is_deleted
+        }
+        return true // 'all'
+      })
+
+      // Sort if sortCol is set
+      if (sortCol) {
+        filtered.sort((a, b) => {
+          let valA = a[sortCol]
+          let valB = b[sortCol]
+          
+          if (valA === null || valA === undefined) valA = ''
+          if (valB === null || valB === undefined) valB = ''
+          
+          if (sortCol === 'created_at') {
+            const parseDate = (val) => {
+              if (!val) return new Date(0)
+              if (isNaN(val) && String(val).includes('T')) {
+                return new Date(val)
+              }
+              const match = String(val).match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})/)
+              if (match) {
+                const day = parseInt(match[1], 10)
+                const month = parseInt(match[2], 10) - 1
+                const year = parseInt(match[3], 10)
+                return new Date(year, month, day)
+              }
+              const parsed = new Date(val)
+              return isNaN(parsed) ? new Date(0) : parsed
+            }
+            const dateA = parseDate(valA)
+            const dateB = parseDate(valB)
+            return sortAsc ? dateA - dateB : dateB - dateA
+          }
+          
+          if (sortCol === 'time') {
+            const parseTimeToMs = (timeStr) => {
+              if (!timeStr) return 999999999
+              const parts = timeStr.split(':')
+              if (parts.length === 2) {
+                const min = parseInt(parts[0], 10) || 0
+                const sec = parseFloat(parts[1]) || 0
+                return (min * 60 + sec) * 1000
+              }
+              const sec = parseFloat(timeStr) || 0
+              return sec * 1000
+            }
+            const timeA = parseTimeToMs(String(valA))
+            const timeB = parseTimeToMs(String(valB))
+            return sortAsc ? timeA - timeB : timeB - timeA
+          }
+          
+          const strA = String(valA).toLowerCase()
+          const strB = String(valB).toLowerCase()
+          if (strA < strB) return sortAsc ? -1 : 1
+          if (strA > strB) return sortAsc ? 1 : -1
+          return 0
+        })
+      }
+      
+      buildTable(filtered)
+
+      const activeCount = Object.keys(filters).length + (showStatus !== 'active' ? 1 : 0)
+      const countEl = document.getElementById('filterCount')
+      if (activeCount > 0) {
+        countEl.innerHTML = `<span>${filtered.length}</span> de ${allData.length} resultados`
+      } else {
+        countEl.textContent = ''
+      }
+
+      document.getElementById('rowCount').textContent =
+        `${filtered.length} tempo${filtered.length !== 1 ? 's' : ''} registrado${filtered.length !== 1 ? 's' : ''}`
+    }
+
+    function clearFilters() {
+      FILTER_COLS.forEach(col => { document.getElementById(`f-${col}`).value = '' })
+      document.getElementById('f-status').value = 'active'
+      applyFilters()
+    }
+
+    async function fetchData() {
+      const status  = document.getElementById('status')
+      const content = document.getElementById('content')
+      const badge   = document.getElementById('liveBadge')
+      const meta    = document.getElementById('meta')
+      const filtersBar = document.getElementById('filtersBar')
+
+      status.className = ''
+      status.textContent = 'Buscando dados...'
+      badge.className = 'badge'
+      badge.textContent = 'Conectando...'
+      content.innerHTML = '<div class="loading"><div class="spinner"></div>Carregando tempos...</div>'
+      meta.style.display = 'none'
+      filtersBar.classList.remove('visible')
+
+      try {
+        const { data, error } = await supabase
+          .from(TABLE)
+          .select('*')
+          .order('id', { ascending: false });
+
+        if (error) throw error;
+
+        allData = data || []
+
+        badge.className = 'badge live'
+        badge.textContent = 'Online'
+        status.className = 'success'
+        status.textContent = '✓ Dados carregados com sucesso'
+
+        if (allData.length === 0) {
+          content.innerHTML = `<div class="table-wrap"><div class="empty"><div class="icon">🏁</div>Tabela vazia — sem tempos registrados.</div></div>`
+          meta.style.display = 'flex'
+          document.getElementById('rowCount').textContent = '0 registros'
+          return
+        }
+
+        populateFilters(allData)
+        filtersBar.classList.add('visible')
+        applyFilters()
+
+        meta.style.display = 'flex'
+
+      } catch (err) {
+        badge.className = 'badge err'
+        badge.textContent = 'Erro'
+        status.className = 'error'
+        status.textContent = `✗ ${err.message}`
+        content.innerHTML = `
+          <div class="table-wrap">
+            <div class="empty">
+              <div class="icon">⚠️</div>
+              ${esc(err.message)}<br><br>
+              <span style="font-size:0.65rem;letter-spacing:0.05em">Verifique o nome da tabela e as políticas de RLS no Supabase.</span>
+            </div>
+          </div>`
+      }
+    }
+
+    function updateUserUI() {
+      const userSection = document.getElementById('userSection')
+      const recordFormSection = document.getElementById('recordFormSection')
+      const formGamertagGroup = document.getElementById('formGamertagGroup')
+
+      if (currentUser && currentProfile) {
+        userSection.innerHTML = `
+          <span style="font-family: var(--cond); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.05em; color: var(--green); text-transform: uppercase;">
+            Piloto: ${esc(currentProfile.gamertag)}
+          </span>
+          <button class="btn-clear" onclick="handleLogout()" style="padding: 6px 14px; font-size: 0.72rem; min-height: auto; margin-left: 8px; cursor: pointer;">
+            Sair
+          </button>
+        `
+        recordFormSection.style.display = 'block'
+
+        if (currentProfile.is_admin) {
+          formGamertagGroup.style.display = 'block'
+          document.getElementById('formGamertag').required = true
+        } else {
+          formGamertagGroup.style.display = 'none'
+          document.getElementById('formGamertag').required = false
+        }
+      } else {
+        userSection.innerHTML = `
+          <button class="btn-outline" onclick="openLoginModal()" style="padding: 6px 14px; font-size: 0.72rem; cursor: pointer;">
+            Entrar
+          </button>
+        `
+        recordFormSection.style.display = 'none'
+        formGamertagGroup.style.display = 'none'
+        document.getElementById('formGamertag').required = false
+      }
+    }
+
+    function sortBy(col) {
+      if (sortCol === col) {
+        sortAsc = !sortAsc
+      } else {
+        sortCol = col
+        sortAsc = true
+      }
+      applyFilters()
+    }
+
+    // Bind globals to window for inline HTML handlers
+    window.applyFilters = applyFilters
+    window.clearFilters = clearFilters
+    window.fetchData = fetchData
+    window.sortBy = sortBy
+
+    window.openLoginModal = function() {
+      document.getElementById('loginEmail').value = ''
+      document.getElementById('loginPassword').value = ''
+      document.getElementById('loginEmailErr').textContent = ''
+      document.getElementById('loginPasswordErr').textContent = ''
+      document.getElementById('loginStatus').textContent = ''
+      document.getElementById('loginStatus').className = 'status-text'
+      document.getElementById('loginModal').classList.add('open')
+    }
+
+    window.closeLoginModal = function() {
+      document.getElementById('loginModal').classList.remove('open')
+    }
+
+    window.handleLogout = async function() {
+      try {
+        await logout()
+        currentUser = null
+        currentProfile = null
+        updateUserUI()
+        applyFilters()
+      } catch (err) {
+        alert('Erro ao sair: ' + err.message)
+      }
+    }
+
+    window.editRow = function(id) {
+      const row = allData.find(r => r.id === id)
+      if (!row) return
+
+      if (!currentUser || (row.user_id !== currentUser.id && !currentProfile?.is_admin)) {
+        alert('Você não tem permissão para editar este registro.')
+        return
+      }
+
+      document.getElementById('editRowId').value = row.id
+      document.getElementById('formCar').value = row.car || ''
+      document.getElementById('formClass').value = row.class || ''
+      document.getElementById('formTrack').value = row.track || ''
+      document.getElementById('formTrackType').value = row.track_type || ''
+      document.getElementById('formRaceType').value = row.race_type || ''
+      document.getElementById('formTime').value = row.time || ''
+      document.getElementById('formLink').value = row.link || ''
+
+      if (currentProfile?.is_admin) {
+        document.getElementById('formGamertag').value = row.gamertag || ''
+      }
+
+      document.getElementById('formTitle').textContent = '📝 Editar Tempo'
+      document.getElementById('btnSubmitForm').textContent = 'Atualizar Registro'
+      document.getElementById('btnCancelEdit').style.display = 'inline-block'
+
+      document.getElementById('recordFormSection').scrollIntoView({ behavior: 'smooth' })
+    }
+
+    window.cancelEdit = function() {
+      document.getElementById('editRowId').value = ''
+      document.getElementById('recordForm').reset()
+      if (currentProfile?.is_admin) {
+        document.getElementById('formGamertag').value = ''
+      }
+      document.getElementById('formTitle').textContent = '🏁 Registrar Novo Tempo'
+      document.getElementById('btnSubmitForm').textContent = 'Salvar Registro'
+      document.getElementById('btnCancelEdit').style.display = 'none'
+    }
+
+    window.deleteRow = async function(id) {
+      const row = allData.find(r => r.id === id)
+      if (!row) return
+
+      if (!currentUser || (row.user_id !== currentUser.id && !currentProfile?.is_admin)) {
+        alert('Você não tem permissão para excluir este registro.')
+        return
+      }
+
+      const statusEl = document.getElementById('status')
+
+      if (row.is_deleted) {
+        if (!confirm(`Deseja realmente EXCLUIR PERMANENTEMENTE o tempo de ${row.time} em ${row.track}? Esta ação não pode ser desfeita.`)) {
+          return
+        }
+        statusEl.className = ''
+        statusEl.textContent = 'Excluindo permanentemente...'
+
+        try {
+          const { error } = await supabase
+            .from(TABLE)
+            .delete()
+            .eq('id', id)
+
+          if (error) throw error;
+          statusEl.className = 'success'
+          statusEl.textContent = '✓ Registro excluído permanentemente!'
+          await fetchData()
+        } catch (err) {
+          statusEl.className = 'error'
+          statusEl.textContent = '✗ Erro ao excluir permanentemente: ' + err.message
+          alert('Erro ao excluir: ' + err.message)
+        }
+      } else {
+        if (!confirm(`Deseja ocultar/excluir o tempo de ${row.time} em ${row.track}? (Ele poderá ser visualizado através dos filtros)`)) {
+          return
+        }
+        statusEl.className = ''
+        statusEl.textContent = 'Ocultando registro...'
+
+        try {
+          const { error } = await supabase
+            .from(TABLE)
+            .update({ is_deleted: true })
+            .eq('id', id)
+
+          if (error) throw error;
+          statusEl.className = 'success'
+          statusEl.textContent = '✓ Registro ocultado com sucesso!'
+          await fetchData()
+        } catch (err) {
+          statusEl.className = 'error'
+          statusEl.textContent = '✗ Erro ao ocultar: ' + err.message
+          alert('Erro ao ocultar: ' + err.message)
+        }
+      }
+    }
+
+    window.restoreRow = async function(id) {
+      const row = allData.find(r => r.id === id)
+      if (!row) return
+
+      if (!currentUser || (row.user_id !== currentUser.id && !currentProfile?.is_admin)) {
+        alert('Você não tem permissão para restaurar este registro.')
+        return
+      }
+
+      const statusEl = document.getElementById('status')
+      statusEl.className = ''
+      statusEl.textContent = 'Restaurando registro...'
+
+      try {
+        const { error } = await supabase
+          .from(TABLE)
+          .update({ is_deleted: false })
+          .eq('id', id)
+
+        if (error) throw error;
+        statusEl.className = 'success'
+        statusEl.textContent = '✓ Registro restaurado com sucesso!'
+        await fetchData()
+      } catch (err) {
+        statusEl.className = 'error'
+        statusEl.textContent = '✗ Erro ao restaurar: ' + err.message
+        alert('Erro ao restaurar: ' + err.message)
+      }
+    }
+
+    // Handle Login submission
+    const loginForm = document.getElementById('loginForm')
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+
+      const emailEl = document.getElementById('loginEmail')
+      const passwordEl = document.getElementById('loginPassword')
+      const emailErr = document.getElementById('loginEmailErr')
+      const passwordErr = document.getElementById('loginPasswordErr')
+      const statusEl = document.getElementById('loginStatus')
+
+      emailErr.textContent = ''
+      passwordErr.textContent = ''
+      statusEl.textContent = ''
+      statusEl.className = 'status-text'
+
+      const email = emailEl.value.trim()
+      const password = passwordEl.value
+
+      let hasError = false
+      if (!email) {
+        emailErr.textContent = 'O email é obrigatório.'
+        hasError = true
+      }
+      if (!password) {
+        passwordErr.textContent = 'A senha é obrigatória.'
+        hasError = true
+      }
+
+      if (hasError) return
+
+      try {
+        statusEl.textContent = 'Entrando...'
+        statusEl.className = 'status-text'
+
+        const session = await login(email, password)
+
+        statusEl.textContent = 'Sucesso!'
+        statusEl.className = 'status-text success'
+
+        currentUser = session.user
+        currentProfile = await getUserProfile(currentUser.id)
+
+        updateUserUI()
+        closeLoginModal()
+        applyFilters()
+      } catch (err) {
+        statusEl.textContent = err.message || 'Erro ao autenticar.'
+        statusEl.className = 'status-text error'
+      }
+    })
+
+    // Handle Record Form submission
+    const recordForm = document.getElementById('recordForm')
+    recordForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      if (!currentUser || !currentProfile) return
+
+      const rowId = document.getElementById('editRowId').value
+      const car = document.getElementById('formCar').value.trim()
+      const classVal = document.getElementById('formClass').value.trim()
+      const track = document.getElementById('formTrack').value.trim()
+      const trackType = document.getElementById('formTrackType').value.trim()
+      const raceType = document.getElementById('formRaceType').value.trim()
+      const time = document.getElementById('formTime').value.trim()
+      const link = document.getElementById('formLink').value.trim()
+
+      if (!car || !classVal || !track || !trackType || !raceType || !time || !link) {
+        alert('Por favor, preencha todos os campos.')
+        return
+      }
+
+      const payload = {
+        car,
+        class: classVal,
+        track,
+        track_type: trackType,
+        race_type: raceType,
+        time,
+        link
+      }
+
+      const statusEl = document.getElementById('status')
+      statusEl.className = ''
+      statusEl.textContent = 'Salvando registro...'
+
+      try {
+        if (currentProfile.is_admin) {
+          const formGamertag = document.getElementById('formGamertag').value.trim()
+          if (!formGamertag) {
+            alert('Por favor, insira a Gamertag do piloto.')
+            return
+          }
+          payload.gamertag = formGamertag
+
+          const { data: matchedProfile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('gamertag', formGamertag)
+            .maybeSingle()
+
+          payload.user_id = matchedProfile ? matchedProfile.id : null
+        } else {
+          if (!rowId) {
+            payload.user_id = currentUser.id
+            payload.gamertag = currentProfile.gamertag
+          }
+        }
+
+        if (rowId) {
+          const { error } = await supabase
+            .from(TABLE)
+            .update(payload)
+            .eq('id', rowId)
+
+          if (error) throw error;
+          statusEl.className = 'success'
+          statusEl.textContent = '✓ Registro atualizado com sucesso!'
+        } else {
+          const { error } = await supabase
+            .from(TABLE)
+            .insert([payload])
+
+          if (error) throw error;
+          statusEl.className = 'success'
+          statusEl.textContent = '✓ Registro criado com sucesso!'
+        }
+
+        cancelEdit()
+        await fetchData()
+      } catch (err) {
+        statusEl.className = 'error'
+        statusEl.textContent = '✗ Erro ao salvar: ' + err.message
+        alert('Erro ao salvar registro: ' + err.message)
+      }
+    })
+
+    // Initialize page: check auth then fetch
+    getCurrentUser().then(async (user) => {
+      if (user) {
+        currentUser = user
+        currentProfile = await getUserProfile(user.id)
+      }
+      updateUserUI()
+      fetchData()
+    })
+  </script>
+</body>
+</html>

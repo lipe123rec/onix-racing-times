@@ -1,0 +1,6 @@
+# Ignore private database policies and files
+private/
+
+# Ignore node modules and build output
+node_modules/
+dist/
