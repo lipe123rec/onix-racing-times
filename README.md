@@ -9,3 +9,5 @@
 # ONIX Racing Times
 
 Placar oficial de tempos de volta da comunidade **ONIX Racing BR** para Forza.
+
+Acesse o placar online em: https://lipe123rec.github.io/onix-racing-times/
